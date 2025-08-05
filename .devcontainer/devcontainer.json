@@ -1,0 +1,16 @@
+{
+  "name": "Flutter Web",
+  "image": "ghcr.io/dart-code/flutter",
+  "postCreateCommand": "flutter doctor",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dart-code.flutter",
+        "dart-code.dart-code"
+      ]
+    }
+  },
+  "features": {
+    "git": "latest"
+  }
+}

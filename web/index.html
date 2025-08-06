@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!-- ... other meta tags ... -->
+  <title>warranty_keeper_web</title>
+  <link rel="manifest" href="manifest.json">
+  
+  <!-- ADD TESSERACT.JS HERE -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+</head>
+<body>
+  <!-- ... other script tags usually added by Flutter ... -->
+  <script src="flutter_bootstrap.js" async></script>
+  
+  <!-- ADD THIS SCRIPT TAG AT THE END OF THE BODY -->
+  <script>
+      function runTesseract(file, lang) {
+        return Tesseract.recognize(
+          file,
+          lang,
+          {
+            logger: m => console.log(m),
+          }
+        ).then(({ data: { text } }) => {
+          return text;
+        }).catch(err => {
+          console.error(err);
+          throw err;
+        });
+      }
+  </script>
+</body>
+</html>

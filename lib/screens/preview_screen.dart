@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:universal_html/html.dart' as html; // To display image
 import '../models/invoice_model.dart';
-import '../utils/constants.dart';
+import '../services/storage_service.dart';
 
 class PreviewScreen extends StatefulWidget {
-  final String imagePath;
+  final String imagePath; // Now a Base64 string
   final Map<String, dynamic> extractedData;
 
   const PreviewScreen({
@@ -42,7 +42,6 @@ class _PreviewScreenState extends State<PreviewScreen> {
       text: widget.extractedData['store'] ?? '',
     );
     
-    // Try to parse the date
     if (widget.extractedData['date'] != null) {
       try {
         _selectedDate = DateFormat('dd/MM/yyyy').parse(widget.extractedData['date']);
@@ -76,7 +75,7 @@ class _PreviewScreenState extends State<PreviewScreen> {
     }
   }
 
-  void _saveInvoice() {
+  void _saveInvoice() async {
     if (_formKey.currentState!.validate()) {
       final invoice = Invoice(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -84,14 +83,15 @@ class _PreviewScreenState extends State<PreviewScreen> {
         purchaseDate: _selectedDate ?? DateTime.now(),
         warrantyMonths: int.tryParse(_warrantyController.text) ?? 12,
         storeName: _storeController.text,
-        imagePath: widget.imagePath,
+        imagePath: widget.imagePath, // Save Base64 string
         createdAt: DateTime.now(),
       );
 
-      final box = Hive.box<Invoice>('invoices');
-      box.add(invoice);
+      await StorageService.addInvoice(invoice);
 
-      Navigator.popUntil(context, (route) => route.isFirst);
+      if (mounted) {
+        Navigator.popUntil(context, (route) => route.isFirst);
+      }
     }
   }
 
@@ -114,19 +114,21 @@ class _PreviewScreenState extends State<PreviewScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Invoice image
+              // Display Base64 image
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(widget.imagePath),
+                child: Image.network(
+                  widget.imagePath,
                   width: double.infinity,
-                  height: 200,
-                  fit: BoxFit.cover,
+                  height: 300, // Larger for web
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.broken_image, size: 100);
+                  },
                 ),
               ),
               const SizedBox(height: 24),
               
-              // Product name
               TextFormField(
                 controller: _productController,
                 decoration: const InputDecoration(
@@ -134,16 +136,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.shopping_bag),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter product name';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty ? 'Please enter product name' : null,
               ),
               const SizedBox(height: 16),
               
-              // Purchase date
               TextFormField(
                 controller: _dateController,
                 decoration: InputDecoration(
@@ -157,16 +153,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
                 ),
                 readOnly: true,
                 onTap: () => _selectDate(context),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please select purchase date';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty ? 'Please select purchase date' : null,
               ),
               const SizedBox(height: 16),
               
-              // Warranty period
               TextFormField(
                 controller: _warrantyController,
                 decoration: const InputDecoration(
@@ -176,18 +166,13 @@ class _PreviewScreenState extends State<PreviewScreen> {
                 ),
                 keyboardType: TextInputType.number,
                 validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter warranty period';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid number';
-                  }
+                  if (value!.isEmpty) return 'Please enter warranty period';
+                  if (int.tryParse(value) == null) return 'Please enter a valid number';
                   return null;
                 },
               ),
               const SizedBox(height: 16),
               
-              // Store name
               TextFormField(
                 controller: _storeController,
                 decoration: const InputDecoration(
@@ -195,16 +180,10 @@ class _PreviewScreenState extends State<PreviewScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.store),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter store name';
-                  }
-                  return null;
-                },
+                validator: (value) => value!.isEmpty ? 'Please enter store name' : null,
               ),
               const SizedBox(height: 32),
               
-              // Save button
               SizedBox(
                 width: double.infinity,
                 height: 50,

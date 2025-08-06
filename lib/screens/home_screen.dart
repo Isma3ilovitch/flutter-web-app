@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:intl/intl.dart';
 import '../models/invoice_model.dart';
-import '../utils/constants.dart';
+import '../services/storage_service.dart';
 import 'camera_screen.dart';
 import 'details_screen.dart';
 
@@ -14,25 +13,37 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late Box<Invoice> invoiceBox;
+  late Future<List<Invoice>> _invoicesFuture;
 
   @override
   void initState() {
     super.initState();
-    invoiceBox = Hive.box<Invoice>('invoices');
+    _refreshInvoices();
+  }
+
+  void _refreshInvoices() {
+    setState(() {
+      _invoicesFuture = StorageService.loadInvoices();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Warranty Keeper'),
+        title: const Text('Warranty Keeper (Web)'),
         centerTitle: true,
       ),
-      body: ValueListenableBuilder(
-        valueListenable: invoiceBox.listenable(),
-        builder: (context, Box<Invoice> box, _) {
-          if (box.values.isEmpty) {
+      body: FutureBuilder<List<Invoice>>(
+        future: _invoicesFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -50,11 +61,12 @@ class _HomeScreenState extends State<HomeScreen> {
             );
           }
 
+          final invoices = snapshot.data!;
           return ListView.builder(
             padding: const EdgeInsets.all(8),
-            itemCount: box.values.length,
+            itemCount: invoices.length,
             itemBuilder: (context, index) {
-              final invoice = box.getAt(index)!;
+              final invoice = invoices[index];
               final expiryDate = invoice.purchaseDate.add(
                 Duration(days: invoice.warrantyMonths * 30),
               );
@@ -108,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       MaterialPageRoute(
                         builder: (context) => DetailsScreen(invoice: invoice),
                       ),
-                    );
+                    ).then((_) => _refreshInvoices()); // Refresh on return
                   },
                 ),
               );
@@ -121,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (context) => const CameraScreen()),
-          );
+          ).then((_) => _refreshInvoices()); // Refresh on return
         },
         child: const Icon(Icons.add),
       ),

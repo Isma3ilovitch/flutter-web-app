@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:universal_html/html.dart' as html; // To display image
 import '../models/invoice_model.dart';
-import '../utils/constants.dart';
+import '../services/storage_service.dart';
 
 class DetailsScreen extends StatelessWidget {
   final Invoice invoice;
@@ -22,9 +23,7 @@ class DetailsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () {
-              _showDeleteDialog(context);
-            },
+            onPressed: () => _showDeleteDialog(context),
           ),
         ],
       ),
@@ -33,19 +32,21 @@ class DetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Invoice image
+            // Display Base64 image
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: Image.file(
-                File(invoice.imagePath),
+              child: Image.network(
+                invoice.imagePath,
                 width: double.infinity,
-                height: 250,
-                fit: BoxFit.cover,
+                height: 350,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(Icons.broken_image, size: 150);
+                },
               ),
             ),
             const SizedBox(height: 24),
             
-            // Product name
             _buildDetailCard(
               title: 'Product',
               value: invoice.productName,
@@ -53,7 +54,6 @@ class DetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // Purchase date
             _buildDetailCard(
               title: 'Purchase Date',
               value: DateFormat('dd MMM yyyy').format(invoice.purchaseDate),
@@ -61,7 +61,6 @@ class DetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // Warranty period
             _buildDetailCard(
               title: 'Warranty Period',
               value: '${invoice.warrantyMonths} months',
@@ -69,7 +68,6 @@ class DetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // Store name
             _buildDetailCard(
               title: 'Store',
               value: invoice.storeName,
@@ -77,7 +75,6 @@ class DetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // Expiry date
             _buildDetailCard(
               title: 'Expiry Date',
               value: DateFormat('dd MMM yyyy').format(expiryDate),
@@ -86,7 +83,6 @@ class DetailsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             
-            // Days left
             _buildDetailCard(
               title: 'Warranty Status',
               value: isExpired
@@ -156,10 +152,12 @@ class DetailsScreen extends StatelessWidget {
             child: const Text('Cancel'),
           ),
           TextButton(
-            onPressed: () {
-              invoice.delete();
-              Navigator.pop(context);
-              Navigator.pop(context);
+            onPressed: () async {
+              await StorageService.deleteInvoice(invoice.id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              }
             },
             child: const Text('Delete', style: TextStyle(color: Colors.red)),
           ),

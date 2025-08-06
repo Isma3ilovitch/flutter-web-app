@@ -1,27 +1,28 @@
-name: warranty_keeper
-description: Offline invoice manager with AI-powered warranty tracking
+name: warranty_keeper_web
+description: Offline invoice manager with AI-powered warranty tracking for Web.
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.19.0 <4.0.0"
+  sdk: ">=3.0.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
-  google_ml_kit: ^0.13.0
-  image_picker: ^1.0.4
-  path_provider: ^2.0.15
+  # --- REPLACEMENTS ---
+  shared_preferences: ^2.2.2 # Replaces Hive for simple web storage
+  image_picker_for_web: ^3.0.1 # Web-specific image picker
+  js: ^0.6.5 # To communicate with JavaScript (Tesseract.js)
+  universal_html: ^2.2.4 # To work with HTML elements and files
+  
+  # --- REMAINING COMPATIBLE PACKAGES ---
   intl: ^0.18.0
-  flutter_local_notifications: ^15.1.1
+  path_provider: ^2.0.15 # Still useful for getting paths
   path: ^1.8.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.6
+  flutter_lints: ^3.0.0
 
 flutter:
   uses-material-design: true

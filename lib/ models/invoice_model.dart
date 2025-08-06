@@ -1,34 +1,48 @@
-import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'screens/home_screen.dart';
+// No Hive annotations needed for web
+class Invoice {
+  String id;
+  String productName;
+  DateTime purchaseDate;
+  int warrantyMonths;
+  String storeName;
+  String imagePath; // This will now be a Base64 string
+  DateTime? createdAt;
 
-// --- WEB-SPECIFIC SETUP ---
-// We need to ensure the web app is correctly initialized.
-Future<void> main() async {
-  // This is crucial for Flutter Web
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize shared_preferences for web storage
-  await SharedPreferences.getInstance();
-  
-  runApp(const WarrantyKeeperApp());
-}
+  Invoice({
+    required this.id,
+    required this.productName,
+    required this.purchaseDate,
+    required this.warrantyMonths,
+    required this.storeName,
+    required this.imagePath,
+    this.createdAt,
+  });
 
-class WarrantyKeeperApp extends StatelessWidget {
-  const WarrantyKeeperApp({super.key});
+  // --- SERIALIZATION ---
+  // We need methods to convert to/from JSON for shared_preferences
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'productName': productName,
+      'purchaseDate': purchaseDate.millisecondsSinceEpoch,
+      'warrantyMonths': warrantyMonths,
+      'storeName': storeName,
+      'imagePath': imagePath,
+      'createdAt': createdAt?.millisecondsSinceEpoch,
+    };
+  }
 
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Warranty Keeper (Web)',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-        visualDensity: VisualDensity.adaptivePlatformDensity,
-        // Make text a bit larger for desktop viewing
-        textTheme: Theme.of(context).textTheme.apply(bodyFontSize: 16),
-      ),
-      home: const HomeScreen(),
-      debugShowCheckedModeBanner: false,
+  factory Invoice.fromJson(Map<String, dynamic> json) {
+    return Invoice(
+      id: json['id'],
+      productName: json['productName'],
+      purchaseDate: DateTime.fromMillisecondsSinceEpoch(json['purchaseDate']),
+      warrantyMonths: json['warrantyMonths'],
+      storeName: json['storeName'],
+      imagePath: json['imagePath'],
+      createdAt: json['createdAt'] != null
+          ? DateTime.fromMillisecondsSinceEpoch(json['createdAt'])
+          : null,
     );
   }
 }

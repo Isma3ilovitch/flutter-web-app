@@ -1,37 +1,34 @@
-import 'package:hive/hive.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'screens/home_screen.dart';
 
-part 'invoice_model.g.dart'; // Generated file
+// --- WEB-SPECIFIC SETUP ---
+// We need to ensure the web app is correctly initialized.
+Future<void> main() async {
+  // This is crucial for Flutter Web
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize shared_preferences for web storage
+  await SharedPreferences.getInstance();
+  
+  runApp(const WarrantyKeeperApp());
+}
 
-@HiveType(typeId: 0)
-class Invoice extends HiveObject {
-  @HiveField(0)
-  late String id;
-  
-  @HiveField(1)
-  late String productName;
-  
-  @HiveField(2)
-  late DateTime purchaseDate;
-  
-  @HiveField(3)
-  late int warrantyMonths;
-  
-  @HiveField(4)
-  late String storeName;
-  
-  @HiveField(5)
-  late String imagePath;
-  
-  @HiveField(6)
-  DateTime? createdAt;
+class WarrantyKeeperApp extends StatelessWidget {
+  const WarrantyKeeperApp({super.key});
 
-  Invoice({
-    required this.id,
-    required this.productName,
-    required this.purchaseDate,
-    required this.warrantyMonths,
-    required this.storeName,
-    required this.imagePath,
-    this.createdAt,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Warranty Keeper (Web)',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+        visualDensity: VisualDensity.adaptivePlatformDensity,
+        // Make text a bit larger for desktop viewing
+        textTheme: Theme.of(context).textTheme.apply(bodyFontSize: 16),
+      ),
+      home: const HomeScreen(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
 }
